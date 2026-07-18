@@ -23,15 +23,22 @@ jobs:
           sudo xcode-select -s /Applications/Xcode_15.4.app
           xcodebuild -version
 
-      - name: Install XcodeGen (via mint - pre-installed on macOS runners)
+      - name: Install XcodeGen (Direct Binary Download)
         run: |
-          # mint is pre-installed on GitHub macOS runners
-          mint install xcodegen/xcodegen@2.38.0
-          mint run xcodegen --version
+          # XcodeGen 2.38.0 - macOS universal binary (GitHub Releases direct asset URL)
+          cd /usr/local/bin
+          curl -L -o xcodegen.zip "https://github.com/xcodegen/xcodegen/releases/download/2.38.0/xcodegen.zip"
+          # Unzip with overwrite, quiet
+          unzip -o xcodegen.zip
+          chmod +x xcodegen
+          rm xcodegen.zip
+          # Verify
+          xcodegen --version
+          which xcodegen
 
       - name: Generate Xcode Project
         run: |
-          mint run xcodegen generate --spec project.yml
+          xcodegen generate --spec project.yml
           echo "=== Project generated ==="
           ls -la YKSQuestionSolver.xcodeproj/
           xcodebuild -list -project YKSQuestionSolver.xcodeproj
@@ -105,4 +112,3 @@ jobs:
             build.log
             export.log
           retention-days: 3
-          
