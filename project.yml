@@ -34,15 +34,16 @@ targets:
   YKSQuestionSolver:
     type: application
     platform: iOS
+    # globs: klasör yoksa hata vermez, sadece o dosyaları eklemez
     sources:
-      - path: Models
-      - path: Views
-      - path: Services
-      - path: ViewModels
-      - path: ML
-      - path: Utils
+      - globs: Models/**/*.swift
+      - globs: Views/**/*.swift
+      - globs: Services/**/*.swift
+      - globs: ViewModels/**/*.swift
+      - globs: ML/**/*.swift
+      - globs: Utils/**/*.swift
     resources:
-      - path: Resources
+      - globs: Resources/**/*
     entitlements:
       com.apple.security.app-sandbox: true
       com.apple.security.files.user-selected.read-only: true
@@ -62,6 +63,6 @@ targets:
     type: bundle.unit-test
     platform: iOS
     sources:
-      - path: Tests
+      - globs: Tests/**/*.swift
     dependencies:
       - target: YKSQuestionSolver
