@@ -43,7 +43,9 @@ targets:
       - path: Utils
     resources:
       - path: Resources
-    entitlements: Entitlements.entitlements
+    entitlements:
+      com.apple.security.app-sandbox: true
+      com.apple.security.files.user-selected.read-only: true
     dependencies: []
     settings:
       base:
