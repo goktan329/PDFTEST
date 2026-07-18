@@ -11,32 +11,38 @@ permissions:
 jobs:
   build-ipa:
     name: Build & Export IPA
-    runs-on: macos-14  # Xcode 15.4
-    timeout-minutes: 40
+    runs-on: macos-14
+    timeout-minutes: 45
+    
+    env:
+      HOMEBREW_NO_REQUIRE_TAP_TRUST: 1  # Homebrew tap trust hatasını bypass et
+      DEVELOPER_DIR: /Applications/Xcode_15.4.app/Contents/Developer
     
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Xcode
-        run: sudo xcode-select -s /Applications/Xcode_15.4.app
-
       - name: Show Xcode Version
-        run: xcodebuild -version
+        run: |
+          sudo xcode-select -s /Applications/Xcode_15.4.app
+          xcodebuild -version
+          xcrun swift --version
 
-      - name: Install XcodeGen
-        run: brew install xcodegen
+      - name: Install XcodeGen (with tap trust fix)
+        run: |
+          brew update
+          brew install xcodegen 2>&1 | tail -20
 
       - name: Generate Xcode Project
-        run: xcodegen generate --spec project.yml
-
-      - name: Verify Project
         run: |
+          xcodegen generate --spec project.yml
+          echo "=== Project generated ==="
           ls -la YKSQuestionSolver.xcodeproj/
           xcodebuild -list -project YKSQuestionSolver.xcodeproj
 
-      - name: Build & Archive
+      - name: Build & Archive (Verbose)
         run: |
+          set -o pipefail
           xcodebuild archive \
             -project YKSQuestionSolver.xcodeproj \
             -scheme YKSQuestionSolver \
@@ -48,9 +54,13 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
             PROVISIONING_PROFILE_SPECIFIER="" \
-            PRODUCT_BUNDLE_IDENTIFIER="com.goktan.yksquestionsolvinginmetro"
+            PRODUCT_BUNDLE_IDENTIFIER="com.goktan.yksquestionsolvinginmetro" \
+            -quiet 2>&1 | tee build.log
+          echo "=== BUILD EXIT CODE: ${PIPESTATUS[0]} ==="
+          tail -50 build.log
 
       - name: Export IPA
+        if: success()
         run: |
           cat > ExportOptions.plist << 'EOF'
           <?xml version="1.0" encoding="UTF-8"?>
@@ -70,17 +80,32 @@ jobs:
           xcodebuild -exportArchive \
             -archivePath ./build/YKSQuestionSolver.xcarchive \
             -exportPath ./build/ipa \
-            -exportOptionsPlist ExportOptions.plist
+            -exportOptionsPlist ExportOptions.plist \
+            2>&1 | tee export.log
+          echo "=== EXPORT EXIT CODE: ${PIPESTATUS[0]} ==="
+          tail -30 export.log
 
       - name: Verify IPA
+        if: success()
         run: |
           ls -la ./build/ipa/
           file ./build/ipa/*.ipa
-          unzip -l ./build/ipa/*.ipa | head -20
+          unzip -l ./build/ipa/*.ipa | head -30
 
       - name: Upload IPA Artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: YKSQuestionSolver-IPA
           path: ./build/ipa/*.ipa
           retention-days: 7
+
+      - name: Upload Build Logs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-failure-logs
+          path: |
+            build.log
+            export.log
+          retention-days: 3
