@@ -26,14 +26,14 @@ targets:
   YKSQuestionSolver:
     type: application
     platform: iOS
+    # String array format: her öğe bir glob/path (object değil, plain string)
     sources:
-      - globs:
-          - "Models/**/*.swift"
-          - "Views/**/*.swift"
-          - "Services/**/*.swift"
-          - "ViewModels/**/*.swift"
-          - "ML/**/*.swift"
-          - "Utils/**/*.swift"
+      - "Models/**/*.swift"
+      - "Views/**/*.swift"
+      - "Services/**/*.swift"
+      - "ViewModels/**/*.swift"
+      - "ML/**/*.swift"
+      - "Utils/**/*.swift"
     entitlements:
       com.apple.security.app-sandbox: true
       com.apple.security.files.user-selected.read-only: true
