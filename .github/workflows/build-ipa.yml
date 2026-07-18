@@ -14,24 +14,22 @@ jobs:
     runs-on: macos-14
     timeout-minutes: 45
     
-    env:
-      HOMEBREW_NO_REQUIRE_TAP_TRUST: 1  # Homebrew tap trust hatasını bypass et
-      DEVELOPER_DIR: /Applications/Xcode_15.4.app/Contents/Developer
-    
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Show Xcode Version
+      - name: Setup Xcode
         run: |
           sudo xcode-select -s /Applications/Xcode_15.4.app
           xcodebuild -version
-          xcrun swift --version
 
-      - name: Install XcodeGen (with tap trust fix)
+      - name: Install XcodeGen (Binary - No Homebrew)
         run: |
-          brew update
-          brew install xcodegen 2>&1 | tail -20
+          # XcodeGen 2.38.0 binary'sini GitHub Releases'dan indir
+          curl -L -o xcodegen.zip https://github.com/xcodegen/xcodegen/releases/download/2.38.0/xcodegen.zip
+          unzip -o xcodegen.zip -d /usr/local/bin/
+          chmod +x /usr/local/bin/xcodegen
+          xcodegen --version
 
       - name: Generate Xcode Project
         run: |
@@ -40,7 +38,7 @@ jobs:
           ls -la YKSQuestionSolver.xcodeproj/
           xcodebuild -list -project YKSQuestionSolver.xcodeproj
 
-      - name: Build & Archive (Verbose)
+      - name: Build & Archive
         run: |
           set -o pipefail
           xcodebuild archive \
@@ -55,9 +53,9 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             PROVISIONING_PROFILE_SPECIFIER="" \
             PRODUCT_BUNDLE_IDENTIFIER="com.goktan.yksquestionsolvinginmetro" \
-            -quiet 2>&1 | tee build.log
+            2>&1 | tee build.log
           echo "=== BUILD EXIT CODE: ${PIPESTATUS[0]} ==="
-          tail -50 build.log
+          tail -80 build.log
 
       - name: Export IPA
         if: success()
@@ -83,7 +81,7 @@ jobs:
             -exportOptionsPlist ExportOptions.plist \
             2>&1 | tee export.log
           echo "=== EXPORT EXIT CODE: ${PIPESTATUS[0]} ==="
-          tail -30 export.log
+          tail -40 export.log
 
       - name: Verify IPA
         if: success()
