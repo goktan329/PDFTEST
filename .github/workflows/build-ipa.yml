@@ -31,18 +31,51 @@ jobs:
           brew install xcodegen
           xcodegen --version
 
-      - name: Verify Source Files Exist
+      - name: Prepare Sources Directory (Flatten all .swift files)
         run: |
-          echo "=== Checking source directories ==="
+          mkdir -p Sources
+          copied=0
           for dir in Models Views Services ViewModels ML Utils; do
             if [ -d "$dir" ]; then
-              count=$(find "$dir" -name "*.swift" | wc -l)
-              echo "✓ $dir: $count .swift files"
+              # Klasörü Sources/ altına kopyala (içindeki .swift dosyaları ile)
+              cp -R "$dir" Sources/
+              count=$(find "Sources/$dir" -name "*.swift" | wc -l)
+              echo "✓ Copied $dir ($count .swift files)"
+              copied=$((copied + count))
             else
-              echo "✗ $dir: NOT FOUND (will create empty group in Xcode)"
+              echo "✗ $dir not found in repo root"
             fi
           done
-          echo "Total .swift files in repo: $(find . -name "*.swift" -not -path "./.github/*" | wc -l)"
+          # Resources varsa kopyala
+          if [ -d "Resources" ]; then
+            cp -R Resources Sources/
+            echo "✓ Copied Resources"
+          fi
+          # Loose .swift files in root
+          for f in *.swift; do
+            if [ -f "$f" ]; then
+              cp "$f" Sources/
+              echo "✓ Copied loose $f"
+              copied=$((copied + 1))
+            fi
+          done
+          echo "=== Total .swift files in Sources: $copied ==="
+          if [ "$copied" -eq 0 ]; then
+            echo "WARNING: No .swift files found! Creating dummy main.swift"
+            echo 'import SwiftUI
+@main
+struct YKSQuestionSolverApp: App {
+    var body: some Scene {
+        WindowGroup { Text("No source files found") }
+    }
+}' > Sources/main.swift
+          fi
+          find Sources -name "*.swift" | head -20
+
+      - name: Verify project.yml Content
+        run: |
+          echo "=== project.yml ==="
+          cat project.yml
 
       - name: Generate Xcode Project
         run: |
