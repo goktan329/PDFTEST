@@ -23,18 +23,20 @@ jobs:
           sudo xcode-select -s /Applications/Xcode_15.4.app
           xcodebuild -version
 
-      - name: Install XcodeGen (Direct Binary Download)
+      - name: Install XcodeGen (via gh CLI - no Homebrew, no curl issues)
         run: |
-          # XcodeGen 2.38.0 - macOS universal binary (GitHub Releases direct asset URL)
+          # gh CLI is pre-installed on GitHub runners
+          # Download xcodegen 2.38.0 release asset directly
           cd /usr/local/bin
-          curl -L -o xcodegen.zip "https://github.com/xcodegen/xcodegen/releases/download/2.38.0/xcodegen.zip"
-          # Unzip with overwrite, quiet
+          gh release download 2.38.0 \
+            --repo xcodegen/xcodegen \
+            --pattern "xcodegen.zip" \
+            --dir /usr/local/bin \
+            --clobber
           unzip -o xcodegen.zip
           chmod +x xcodegen
           rm xcodegen.zip
-          # Verify
           xcodegen --version
-          which xcodegen
 
       - name: Generate Xcode Project
         run: |
