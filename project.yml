@@ -27,7 +27,13 @@ targets:
     type: application
     platform: iOS
     sources:
-      - path: Sources
+      - globs:
+          - "Models/**/*.swift"
+          - "Views/**/*.swift"
+          - "Services/**/*.swift"
+          - "ViewModels/**/*.swift"
+          - "ML/**/*.swift"
+          - "Utils/**/*.swift"
     entitlements:
       com.apple.security.app-sandbox: true
       com.apple.security.files.user-selected.read-only: true
@@ -38,3 +44,4 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: "YKS Soru Çözücü"
         CODE_SIGN_IDENTITY: ""
         CODE_SIGNING_REQUIRED: NO
+        CODE_SIGNING_ALLOWED: NO
